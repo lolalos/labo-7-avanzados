@@ -724,5 +724,515 @@ Total de colisiones: 2
 Factor de carga: 71.4286%
 \end{verbatim}
 \end{multicols}
+%---------------------- Ejercicio 3 ----------------------
+\section{Ejercicio 3: B-Tree de Orden 3}
 
+\subsection{Descripción del Problema}
+Construir manualmente un B-Tree de orden 3 insertando en este orden:
+
+\[
+10,\; 20,\; 5,\; 6,\; 12,\; 30,\; 7,\; 17
+\]
+
+Entregar:
+\begin{itemize}
+    \item Pasos detallados de cada división.
+    \item Árbol final.
+    \item Breve explicación de la eficiencia de los B-Tree en sistemas de archivos.
+\end{itemize}
+
+\subsection{Implementación en C++}
+\begin{multicols}{2}
+\begin{lstlisting}[caption={Implementación de B-Tree de Orden 3}]
+#include <iostream>
+#include <vector>
+using namespace std;
+
+const int ORDEN = 3;
+const int MAX_KEYS = ORDEN - 1;
+
+class BTreeNode {
+public:
+        vector<int> keys;
+        vector<BTreeNode*> children;
+        bool isLeaf;
+
+        BTreeNode(bool leaf = true)
+                : isLeaf(leaf) {}
+
+        bool isFull() const {
+                return (int)keys.size() >= MAX_KEYS;
+        }
+};
+
+class BTree {
+private:
+        BTreeNode* root;
+        int insertionStep;
+
+        void splitChild(BTreeNode* parent,
+                                        int index) {
+                BTreeNode* fullChild =
+                        parent->children[index];
+                BTreeNode* newChild =
+                        new BTreeNode(
+                            fullChild->isLeaf);
+
+                int midIndex = MAX_KEYS / 2;
+                int midKey = fullChild->keys[midIndex];
+
+                cout << "\n  [DIVISION] Nodo lleno: ";
+                for (int k : fullChild->keys)
+                        cout << k << " ";
+                cout << "\n  Subiendo clave "
+                         << midKey << " al padre\n";
+
+                for (size_t i = midIndex + 1;
+                         i < fullChild->keys.size();
+                         i++) {
+                        newChild->keys.push_back(
+                            fullChild->keys[i]);
+                }
+
+                if (!fullChild->isLeaf) {
+                        for (size_t i = midIndex + 1;
+                                 i < fullChild->children.size();
+                                 i++) {
+                                newChild->children.push_back(
+                                    fullChild->children[i]);
+                        }
+                        fullChild->children.resize(
+                            midIndex + 1);
+                }
+
+                fullChild->keys.resize(midIndex);
+
+                parent->keys.insert(
+                    parent->keys.begin()
+                        + index,
+                    midKey);
+                parent->children.insert(
+                    parent->children.begin()
+                        + index + 1,
+                    newChild);
+        }
+
+        void insertNonFull(BTreeNode* node,
+                                             int key) {
+                int i = (int)node->keys.size() - 1;
+
+                if (node->isLeaf) {
+                        node->keys.push_back(0);
+                        while (i >= 0 &&
+                                     key < node->keys[i]) {
+                                node->keys[i + 1] =
+                                    node->keys[i];
+                                i--;
+                        }
+                        node->keys[i + 1] = key;
+                } else {
+                        while (i >= 0 &&
+                                     key < node->keys[i])
+                                i--;
+                        i++;
+
+                        if (node->children[i]
+                                        ->isFull()) {
+                                splitChild(node, i);
+                                if (key > node->keys[i])
+                                        i++;
+                        }
+                        insertNonFull(
+                            node->children[i], key);
+                }
+        }
+
+        void printTree(BTreeNode* node,
+                                     int level = 0) {
+                if (!node) return;
+
+                cout << "  Nivel " << level
+                         << ": [";
+                for (size_t i = 0;
+                         i < node->keys.size();
+                         i++) {
+                        if (i > 0) cout << ", ";
+                        cout << node->keys[i];
+                }
+                cout << "]";
+                if (node->isLeaf)
+                        cout << " (hoja)";
+                cout << "\n";
+
+                if (!node->isLeaf) {
+                        for (size_t i = 0;
+                                 i < node->children.size();
+                                 i++) {
+                                printTree(
+                                    node->children[i],
+                                    level + 1);
+                        }
+                }
+        }
+
+public:
+        BTree()
+            : root(new BTreeNode()),
+                insertionStep(0) {}
+
+        void insert(int key) {
+                insertionStep++;
+                cout << "\n--- Paso "
+                         << insertionStep
+                         << ": Insertar "
+                         << key << " ---\n";
+
+                if (root->isFull()) {
+                        BTreeNode* newRoot =
+                            new BTreeNode(false);
+                        newRoot->children.push_back(
+                            root);
+                        splitChild(newRoot, 0);
+                        root = newRoot;
+                }
+                insertNonFull(root, key);
+
+                cout << "\nArbol actual:\n";
+                printTree(root);
+        }
+
+        void displayFinal() {
+                cout << "\n\n========== "
+                         << "ARBOL FINAL "
+                         << "==========\n";
+                printTree(root);
+                cout << "================"
+                         << "================\n";
+        }
+};
+
+int main() {
+        BTree btree;
+
+        cout << "B-TREE DE ORDEN 3\n";
+        cout << "Insertando: 10, 20, 5, "
+                 << "6, 12, 30, 7, 17\n";
+        cout << "=================="
+                 << "===================\n";
+
+        int values[] =
+            {10, 20, 5, 6, 12, 30, 7, 17};
+        int n = sizeof(values) /
+                        sizeof(values[0]);
+
+        for (int i = 0; i < n; i++) {
+                btree.insert(values[i]);
+        }
+
+        btree.displayFinal();
+        return 0;
+}
+\end{lstlisting}
+\end{multicols}
+
+\subsection{Resultados de Ejecución}
+\begin{multicols}{2}
+\begin{verbatim}
+B-TREE DE ORDEN 3
+Insertando: 10, 20, 5, 6, 
+                        12, 30, 7, 17
+=========================================
+
+--- Paso 1: Insertar 10 ---
+
+Arbol actual:
+    Nivel 0: [10] (hoja)
+
+--- Paso 2: Insertar 20 ---
+
+Arbol actual:
+    Nivel 0: [10, 20] (hoja)
+
+--- Paso 3: Insertar 5 ---
+
+    [DIVISION] Nodo lleno: 10 20 
+    Subiendo clave 20 al padre
+
+Arbol actual:
+    Nivel 0: [20]
+    Nivel 1: [5, 10] (hoja)
+    Nivel 1: [] (hoja)
+\end{verbatim}
+\columnbreak
+\begin{verbatim}
+--- Paso 8: Insertar 17 ---
+
+    [DIVISION] Nodo lleno: 6 10 
+    Subiendo clave 10 al padre
+
+Arbol actual:
+    Nivel 0: [10, 20]
+    Nivel 1: [6]
+    Nivel 2: [5] (hoja)
+    Nivel 2: [7] (hoja)
+    Nivel 1: []
+    Nivel 2: [12, 17] (hoja)
+    Nivel 1: []
+    Nivel 2: [30] (hoja)
+
+========== ARBOL FINAL ==========
+    Nivel 0: [10, 20]
+    Nivel 1: [6]
+    Nivel 2: [5] (hoja)
+    Nivel 2: [7] (hoja)
+    Nivel 1: []
+    Nivel 2: [12, 17] (hoja)
+    Nivel 1: []
+    Nivel 2: [30] (hoja)
+=================================
+\end{verbatim}
+\end{multicols}
+%---------------------- Ejercicio 4 ----------------------
+\section{Ejercicio 4 (Medio): Cola Lock-Free Tipo Michael–Scott}
+
+\subsection{Descripción del Problema}
+Simular el funcionamiento de una cola lock-free (sin bloqueos) para dos hilos siguiendo el algoritmo de Michael–Scott.  
+Los hilos realizan las siguientes operaciones:
+
+\begin{itemize}
+    \item Hilo 1 encola: 1, 2
+    \item Hilo 2 encola: 3, 4
+\end{itemize}
+
+El estudiante debe entregar:
+\begin{enumerate}
+    \item Estado del puntero \texttt{tail} tras cada operación \texttt{CAS}.
+    \item Lista final almacenada en la cola.
+    \item Explicación del problema ABA.
+\end{enumerate}
+
+\subsection{Implementación en C++}
+\begin{multicols}{2}
+\begin{lstlisting}[caption={Cola Lock-Free tipo Michael–Scott}]
+#include <iostream>
+#include <atomic>
+#include <thread>
+#include <vector>
+#include <chrono>
+using namespace std;
+
+template<typename T>
+struct Node {
+    T data;
+    atomic<Node<T>*> next;
+
+    Node(T val) : data(val), next(nullptr) {}
+};
+
+template<typename T>
+class LockFreeQueue {
+private:
+    atomic<Node<T>*> head;
+    atomic<Node<T>*> tail;
+    int casCount;
+
+    void printState(const string& op,
+                    Node<T>* tailPtr) {
+        cout << "  [CAS #" << ++casCount
+             << "] " << op << "\n";
+        cout << "    -> tail apunta a nodo "
+                "con valor: ";
+        if (tailPtr) cout << tailPtr->data
+                          << "\n";
+        else cout << "nullptr\n";
+    }
+
+public:
+    LockFreeQueue() : casCount(0) {
+        Node<T>* dummy = new Node<T>(T());
+        head.store(dummy);
+        tail.store(dummy);
+    }
+
+    void enqueue(T value, int threadId) {
+        Node<T>* newNode = new Node<T>(value);
+
+        cout << "\n--- Hilo " << threadId
+             << ": Encolando " << value
+             << " ---\n";
+
+        while (true) {
+            Node<T>* last = tail.load();
+            Node<T>* next = last->next.load();
+
+            if (last == tail.load()) {
+                if (next == nullptr) {
+                    if (last->next
+                          .compare_exchange_weak(
+                              next, newNode)) {
+                        printState(
+                          "next de " +
+                            to_string(last->data) +
+                            " -> " +
+                            to_string(value),
+                          last);
+                        tail.compare_exchange_weak(
+                          last, newNode);
+                        printState(
+                          "tail avanzado a " +
+                            to_string(value),
+                          newNode);
+                        break;
+                    }
+                } else {
+                    tail.compare_exchange_weak(
+                      last, next);
+                    printState(
+                      "tail corregido "
+                      "(estaba atrasado)",
+                      next);
+                }
+            }
+        }
+
+        this_thread::sleep_for(
+          chrono::milliseconds(10));
+    }
+
+    void printQueue() {
+        cout << "\n========== "
+                "LISTA FINAL ==========\n";
+        cout << "Contenido de la cola: ";
+        Node<T>* current =
+          head.load()->next.load();
+
+        if (!current) {
+            cout << "(vacia)";
+        } else {
+            while (current) {
+                cout << current->data;
+                current = current->next.load();
+                if (current) cout << " -> ";
+            }
+        }
+        cout << "\n======================"
+                "===========\n";
+    }
+
+    void explainABA() {
+        cout << "\n========== "
+                "PROBLEMA ABA ==========\n";
+        cout << "El problema ABA ocurre "
+                "cuando:\n\n";
+        cout << "1. Hilo T1 lee tail "
+                "apuntando a nodo A\n";
+        cout << "2. T1 es suspendido antes "
+                "de hacer CAS\n";
+        cout << "3. Hilo T2 desencola A, "
+                "luego B, luego encola\n";
+        cout << "   un nuevo nodo que "
+                "reutiliza la direccion A\n";
+        cout << "4. T1 se reanuda, ve que "
+                "tail sigue siendo A\n";
+        cout << "   (misma direccion)\n";
+        cout << "5. CAS tiene exito aunque "
+                "la estructura cambio\n";
+        cout << "   entre medio\n\n";
+        cout << "Solucion: usar contadores "
+                "de version (tagged\n";
+        cout << "pointers) o hazard "
+                "pointers.\n";
+        cout << "En esta simulacion "
+                "simplificada no ocurre\n";
+        cout << "porque no hay dequeue ni "
+                "reuso de memoria.\n";
+        cout << "======================="
+                "============\n";
+    }
+};
+
+void threadFunction(
+  LockFreeQueue<int>& queue,
+  vector<int> values,
+  int threadId) {
+    for (int val : values) {
+        queue.enqueue(val, threadId);
+    }
+}
+
+int main() {
+    LockFreeQueue<int> queue;
+
+    cout << "COLA LOCK-FREE "
+            "(Michael-Scott)\n";
+    cout << "================"
+            "===============\n";
+    cout << "Simulacion con 2 hilos:\n";
+    cout << "  Hilo 1: encola 1, 2\n";
+    cout << "  Hilo 2: encola 3, 4\n\n";
+    cout << "Estado inicial: cola "
+            "vacia con nodo dummy\n";
+
+    thread t1(threadFunction,
+              ref(queue),
+              vector<int>{1, 2}, 1);
+    thread t2(threadFunction,
+              ref(queue),
+              vector<int>{3, 4}, 2);
+
+    t1.join();
+    t2.join();
+
+    queue.printQueue();
+    queue.explainABA();
+
+    return 0;
+}
+\end{lstlisting}
+\end{multicols}
+
+\subsection{Resultados de Ejecución}
+\begin{multicols}{2}
+\begin{verbatim}
+COLA LOCK-FREE (Michael-Scott)
+===============================
+Simulacion con 2 hilos:
+  Hilo 1: encola 1, 2
+  Hilo 2: encola 3, 4
+
+Estado inicial: cola vacia con nodo dummy
+
+--- Hilo 2: Encolando 3 ---
+  [CAS #1] next de 0 -> 3
+    -> tail apunta a nodo con valor: 0
+  [CAS #2] tail avanzado a 3
+    -> tail apunta a nodo con valor: 3
+
+--- Hilo 1: Encolando 1 ---
+  [CAS #3] next de 3 -> 1
+    -> tail apunta a nodo con valor: 3
+  [CAS #4] tail avanzado a 1
+    -> tail apunta a nodo con valor: 1
+\end{verbatim}
+\columnbreak
+\begin{verbatim}
+--- Hilo 2: Encolando 4 ---
+  [CAS #5] next de 1 -> 4
+    -> tail apunta a nodo con valor: 1
+  [CAS #6] tail avanzado a 4
+    -> tail apunta a nodo con valor: 4
+
+--- Hilo 1: Encolando 2 ---
+  [CAS #7] tail corregido (estaba atrasado)
+    -> tail apunta a nodo con valor: 4
+  [CAS #8] next de 4 -> 2
+    -> tail apunta a nodo con valor: 4
+  [CAS #9] tail avanzado a 2
+    -> tail apunta a nodo con valor: 2
+
+========== LISTA FINAL ==========
+Contenido de la cola: 3 -> 1 -> 4 -> 2
+=================================
+\end{verbatim}
+\end{multicols}
 \end{document}
