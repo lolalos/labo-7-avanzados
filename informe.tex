@@ -1,0 +1,728 @@
+\documentclass[10pt,a4paper]{article}
+% Codificación y español
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+
+% Matemáticas y formato
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{verbatim}
+\usepackage{longtable}
+\usepackage{fancyhdr}
+\usepackage{enumitem}
+\usepackage{multicol}
+
+% Listados de código
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\scriptsize,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    tabsize=2,
+    language=C++,
+    showstringspaces=false,
+    numbers=left,
+    numbersep=5pt,
+    frame=single,
+    rulecolor=\color{black}
+}
+\lstset{style=codestyle}
+
+\geometry{margin=1in}
+\graphicspath{{./}}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Algoritmos Avanzados}
+\lhead{Efraín Vitorino Marín}
+\rfoot{\thepage}
+
+\begin{document}
+
+%---------------------- Portada ----------------------
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\LARGE\bfseries UNIVERSIDAD NACIONAL DE SAN ANTONIO ABAD DEL CUSCO\par}
+    \vspace{0.5cm}
+    {\Large FACULTAD DE INGENIERÍA ELÉCTRICA, ELECTRÓNICA, INFORMÁTICA Y MECÁNICA\par}
+    \vspace{0.5cm}
+    {\Large ESCUELA PROFESIONAL DE INGENIERÍA INFORMÁTICA Y DE SISTEMAS\par}
+    \vfill
+    \includegraphics[width=0.25\linewidth]{Escudo_UNSAAC.png}\par
+    \vfill
+    {\Large\bfseries CURSO: ALGORITMOS AVANZADOS\par}
+    \vspace{0.3cm}
+    {\Large\bfseries TRABAJO: 7 Laboratorio (Tipos de Datos)\par}
+    \vspace{0.3cm}
+    {\Large\bfseries PROFESOR: Msc. Raúl Huillca Huallparimachi\par}
+    \vspace{1cm}
+    {\Large\bfseries ALUMNO: Efraín Vitorino Marín\par}
+    {\Large\bfseries CÓDIGO: 160337\par}
+    \vfill
+    {\Large 2025-II\par}
+\end{titlepage}
+
+\setcounter{page}{1}
+\pagestyle{fancy}
+
+%---------------------- Introducción ----------------------
+\section{Introducción}
+Este documento presenta la implementación de dos estructuras de datos fundamentales en algoritmos avanzados: el Árbol AVL y la Tabla Hash con encadenamiento. Se detallan los algoritmos, el código en C++ y los resultados obtenidos.
+
+%---------------------- Ejercicio 1 ----------------------
+\section{Ejercicio 1: Árbol AVL — Inserción y Rotaciones}
+
+\subsection{Descripción del Problema}
+Implemente un árbol AVL que permita insertar elementos, aplicar rotaciones y mostrar la altura del árbol tras cada inserción.
+
+\subsection{Explicación Teórica}
+Un árbol AVL se mantiene balanceado asegurando que:
+
+\begin{equation}
+\text{factor\_balance} = h(\text{izq}) - h(\text{der}) \in \{-1, 0, 1\}
+\end{equation}
+
+Cuando no se cumple, se aplican rotaciones.
+
+\subsection{Pseudocódigo de Inserción}
+\begin{verbatim}
+Insertar(nodo, clave):
+  Si nodo es null:
+    retornar nuevo Nodo(clave)
+  Si clave < nodo.clave:
+    nodo.izq = Insertar(nodo.izq, clave)
+  Else:
+    nodo.der = Insertar(nodo.der, clave)
+  actualizar_altura(nodo)
+  fb = factor_balance(nodo)
+  Caso 1: fb > 1 y clave < nodo.izq.clave:
+    retornar rotar_derecha(nodo)
+  Caso 2: fb < -1 y clave > nodo.der.clave:
+    retornar rotar_izquierda(nodo)
+  Caso 3: fb > 1 y clave > nodo.izq.clave:
+    nodo.izq = rotar_izquierda(nodo.izq)
+    retornar rotar_derecha(nodo)
+  Caso 4: fb < -1 y clave < nodo.der.clave:
+    nodo.der = rotar_derecha(nodo.der)
+    retornar rotar_izquierda(nodo)
+  retornar nodo
+\end{verbatim}
+
+\subsection{Requisitos de Entrega}
+\begin{itemize}
+\item Árbol final
+\item Altura total
+\item Recorridos: in-order, pre-order, post-order
+\end{itemize}
+
+\subsection{Implementación en C++}
+\begin{multicols}{2}
+\begin{lstlisting}[caption={Implementación del Árbol AVL}]
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+// Definicion de la estructura
+class Nodo {
+public:
+    int clave;
+    Nodo* izq;
+    Nodo* der;
+    int altura;
+
+    Nodo(int valor) {
+        clave = valor;
+        izq = nullptr;
+        der = nullptr;
+        altura = 1;
+    }
+};
+
+// Clase ArbolAVL
+class ArbolAVL {
+private:
+    Nodo* raiz;
+
+    int obtenerAltura(Nodo* n) {
+        if (n == nullptr)
+            return 0;
+        return n->altura;
+    }
+
+    int factorBalance(Nodo* n) {
+        if (n == nullptr)
+            return 0;
+        return obtenerAltura(n->izq)
+             - obtenerAltura(n->der);
+    }
+
+    void actualizarAltura(Nodo* n){
+        if (n != nullptr) {
+            n->altura = 1 + 
+              max(obtenerAltura(n->izq),
+                  obtenerAltura(n->der));
+        }
+    }
+
+    // Rotacion derecha
+    Nodo* rotarDerecha(Nodo* y) {
+        Nodo* x = y->izq;
+        Nodo* T2 = x->der;
+        x->der = y;
+        y->izq = T2;
+        actualizarAltura(y);
+        actualizarAltura(x);
+        return x;
+    }
+
+    // Rotacion izquierda
+    Nodo* rotarIzquierda(Nodo* x){
+        Nodo* y = x->der;
+        Nodo* T2 = y->izq;
+        y->izq = x;
+        x->der = T2;
+        actualizarAltura(x);
+        actualizarAltura(y);
+        return y;
+    }
+
+    // Insercion
+    Nodo* insertar(Nodo* nodo, 
+                   int clave) {
+        if (nodo == nullptr)
+            return new Nodo(clave);
+
+        if (clave < nodo->clave)
+            nodo->izq = 
+              insertar(nodo->izq, clave);
+        else if (clave > nodo->clave)
+            nodo->der = 
+              insertar(nodo->der, clave);
+        else
+            return nodo;
+
+        actualizarAltura(nodo);
+        int fb = factorBalance(nodo);
+
+        // Caso Left-Left
+        if (fb > 1 && 
+            clave < nodo->izq->clave)
+            return rotarDerecha(nodo);
+
+        // Caso Right-Right
+        if (fb < -1 && 
+            clave > nodo->der->clave)
+            return rotarIzquierda(nodo);
+
+        // Caso Left-Right
+        if (fb > 1 && 
+            clave > nodo->izq->clave) {
+            nodo->izq = 
+              rotarIzquierda(nodo->izq);
+            return rotarDerecha(nodo);
+        }
+
+        // Caso Right-Left
+        if (fb < -1 && 
+            clave < nodo->der->clave) {
+            nodo->der = 
+              rotarDerecha(nodo->der);
+            return rotarIzquierda(nodo);
+        }
+        return nodo;
+    }
+
+    void inOrder(Nodo* nodo) {
+        if (nodo != nullptr) {
+            inOrder(nodo->izq);
+            cout << nodo->clave << " ";
+            inOrder(nodo->der);
+        }
+    }
+
+    void preOrder(Nodo* nodo) {
+        if (nodo != nullptr) {
+            cout << nodo->clave << " ";
+            preOrder(nodo->izq);
+            preOrder(nodo->der);
+        }
+    }
+
+    void postOrder(Nodo* nodo) {
+        if (nodo != nullptr) {
+            postOrder(nodo->izq);
+            postOrder(nodo->der);
+            cout << nodo->clave << " ";
+        }
+    }
+
+public:
+    ArbolAVL() {
+        raiz = nullptr;
+    }
+
+    void insertarClave(int clave) {
+        raiz = insertar(raiz, clave);
+    }
+
+    int obtenerAlturaTotal() {
+        return obtenerAltura(raiz);
+    }
+
+    void mostrarInOrder() {
+        cout << "In-order: ";
+        inOrder(raiz);
+        cout << endl;
+    }
+
+    void mostrarPreOrder() {
+        cout << "Pre-order: ";
+        preOrder(raiz);
+        cout << endl;
+    }
+
+    void mostrarPostOrder() {
+        cout << "Post-order: ";
+        postOrder(raiz);
+        cout << endl;
+    }
+};
+
+int main() {
+    ArbolAVL arbol;
+    cout << "=== ARBOL AVL ===" 
+         << endl << endl;
+
+    int elementos[] = 
+      {10, 20, 30, 40, 50, 25};
+    int n = sizeof(elementos) / 
+            sizeof(elementos[0]);
+
+    for (int i = 0; i < n; i++) {
+        cout << "Insertando: " 
+             << elementos[i] << endl;
+        arbol.insertarClave(
+          elementos[i]);
+        cout << "Altura: " 
+             << arbol.obtenerAlturaTotal()
+             << endl;
+        arbol.mostrarInOrder();
+        cout << endl;
+    }
+
+    cout << "\n============" 
+         << endl;
+    cout << "ARBOL FINAL" << endl;
+    cout << "============" 
+         << endl;
+    cout << "\nAltura total: " 
+         << arbol.obtenerAlturaTotal() 
+         << endl;
+    
+    cout << "\n============" 
+         << endl;
+    cout << "RECORRIDOS" << endl;
+    cout << "============" 
+         << endl;
+    arbol.mostrarInOrder();
+    arbol.mostrarPreOrder();
+    arbol.mostrarPostOrder();
+
+    return 0;
+}
+\end{lstlisting}
+\end{multicols}
+
+\subsection{Resultados de Ejecución}
+\begin{multicols}{2}
+\begin{verbatim}
+=== ARBOL AVL - Insercion 
+    y Rotaciones ===
+
+Insertando: 10
+Altura del arbol: 1
+In-order: 10 
+
+Insertando: 20
+Altura del arbol: 2
+In-order: 10 20 
+
+Insertando: 30
+Altura del arbol: 2
+In-order: 10 20 30 
+
+Insertando: 40
+Altura del arbol: 3
+In-order: 10 20 30 40
+
+Insertando: 50
+Altura del arbol: 3
+In-order: 10 20 30 40 50
+
+Insertando: 25
+Altura del arbol: 3
+In-order: 10 20 25 30 40 50
+\end{verbatim}
+\columnbreak
+\begin{verbatim}
+============================
+     ARBOL FINAL
+============================
+
+Altura total: 3
+
+============================
+     RECORRIDOS
+============================
+In-order: 
+  10 20 25 30 40 50
+Pre-order: 
+  30 20 10 25 40 50
+Post-order: 
+  10 25 20 50 40 30
+============================
+\end{verbatim}
+\end{multicols}
+
+%---------------------- Ejercicio 2 ----------------------
+\section{Ejercicio 2: Tabla Hash con Encadenamiento}
+
+\subsection{Descripción del Problema}
+Implementar una tabla hash con función modular, encadenamiento y conteo de colisiones.
+
+\subsection{Datos de Ejemplo}
+Elementos: 23, 57, 87, 15, 42, 34, 20
+
+Función hash:
+\begin{equation}
+h(x) = x \bmod m
+\end{equation}
+
+\subsection{Objetivo}
+El estudiante debe mostrar la tabla resultante y comparar colisiones con una tabla de tamaño 7 y otra de tamaño 10.
+
+\subsection{Implementación en C++}
+\begin{multicols}{2}
+\begin{lstlisting}[caption={Tabla Hash con Encadenamiento}]
+#include <iostream>
+#include <vector>
+using namespace std;
+
+// Clase Tabla Hash
+class TablaHash {
+private:
+    int tamano;
+    vector<vector<int>> tabla;
+    int totalColisiones;
+
+    // Funcion hash
+    inline int funcionHash(
+      int clave) const {
+        return clave % tamano;
+    }
+
+public:
+    TablaHash(int tam) : 
+      tamano(tam), tabla(tam), 
+      totalColisiones(0) {}
+
+    void insertar(int valor) {
+        int indice = 
+          funcionHash(valor);
+        
+        if (tabla[indice].empty()) {
+            cout << "  " << valor 
+                 << " -> Indice " 
+                 << indice 
+                 << " (sin colision)" 
+                 << endl;
+        } else {
+            totalColisiones++;
+            cout << "  " << valor 
+                 << " -> Indice " 
+                 << indice 
+                 << " (COLISION #" 
+                 << totalColisiones 
+                 << ")" << endl;
+        }
+        
+        tabla[indice].push_back(
+          valor);
+    }
+
+    void mostrarTabla() const {
+        cout << "\n=============" 
+             << endl;
+        cout << "TABLA HASH (" 
+             << tamano << ")" 
+             << endl;
+        cout << "=============" 
+             << endl;
+        
+        for (int i = 0; 
+             i < tamano; i++) {
+            cout << "Indice [" 
+                 << i << "]: ";
+            
+            if (tabla[i].empty()) {
+                cout << "vacio";
+            } else {
+                for (size_t j = 0; 
+                     j < tabla[i].size();
+                     j++) {
+                    cout << tabla[i][j];
+                    if (j < 
+                        tabla[i].size()-1)
+                        cout << " -> ";
+                }
+            }
+            cout << endl;
+        }
+        cout << "=============" 
+             << endl;
+    }
+
+    inline int 
+    obtenerColisiones() const {
+        return totalColisiones;
+    }
+
+    bool buscar(int valor) const{
+        int indice = 
+          funcionHash(valor);
+        const vector<int>& lista = 
+          tabla[indice];
+        
+        for (int elem : lista) {
+            if (elem == valor) 
+                return true;
+        }
+        return false;
+    }
+
+    double factorCarga() const {
+        int elementosUsados = 0;
+        for (const auto& lista : 
+             tabla) {
+            if (!lista.empty()) 
+                elementosUsados++;
+        }
+        return static_cast<double>(
+          elementosUsados) / tamano;
+    }
+};
+
+int main() {
+    cout << "\n=============" 
+         << endl;
+    cout << "TABLA HASH" << endl;
+    cout << "=============" 
+         << endl;
+
+    const int datos[] = 
+      {23, 57, 87, 15, 42, 
+       34, 20};
+    const int n = sizeof(datos)
+                / sizeof(datos[0]);
+
+    cout << "\nDatos: ";
+    for (int i = 0; i < n; i++) {
+        cout << datos[i];
+        if (i < n - 1) 
+            cout << ", ";
+    }
+    cout << "\n" << endl;
+
+    // TABLA TAMANO 10
+    cout << "\n=============" 
+         << endl;
+    cout << "Tamano 10" << endl;
+    cout << "h(x) = x mod 10" 
+         << endl;
+    cout << "=============" 
+         << endl;
+    
+    TablaHash tabla10(10);
+    
+    cout << "\nInsertando:" 
+         << endl;
+    for (int i = 0; i < n; i++) {
+        tabla10.insertar(
+          datos[i]);
+    }
+    
+    tabla10.mostrarTabla();
+    cout << "\nColisiones: " 
+         << tabla10.obtenerColisiones()
+         << endl;
+    cout << "Factor carga: " 
+         << tabla10.factorCarga()*100
+         << "%" << endl;
+
+    // TABLA TAMANO 7
+    cout << "\n\n=============" 
+         << endl;
+    cout << "Tamano 7" << endl;
+    cout << "h(x) = x mod 7" 
+         << endl;
+    cout << "=============" 
+         << endl;
+    
+    TablaHash tabla7(7);
+    
+    cout << "\nInsertando:" 
+         << endl;
+    for (int i = 0; i < n; i++) {
+        tabla7.insertar(datos[i]);
+    }
+    
+    tabla7.mostrarTabla();
+    cout << "\nColisiones: " 
+         << tabla7.obtenerColisiones()
+         << endl;
+    cout << "Factor carga: " 
+         << tabla7.factorCarga()*100
+         << "%" << endl;
+
+    // COMPARACION
+    cout << "\n\n=============" 
+         << endl;
+    cout << "COMPARACION" << endl;
+    cout << "=============" 
+         << endl;
+    cout << "Tabla 10: " 
+         << tabla10.obtenerColisiones()
+         << " colisiones" << endl;
+    cout << "Tabla 7: " 
+         << tabla7.obtenerColisiones()
+         << " colisiones" << endl;
+    
+    int diferencia = 
+      tabla7.obtenerColisiones() -
+      tabla10.obtenerColisiones();
+    cout << "\nDiferencia: " 
+         << diferencia 
+         << " colisiones mas" 
+         << endl;
+
+    return 0;
+}
+\end{lstlisting}
+\end{multicols}
+
+\subsection{Resultados de Ejecución}
+\subsubsection{Tabla Hash con Tamaño 10}
+\begin{multicols}{2}
+\begin{verbatim}
+============================
+TABLA HASH - Tamano 10
+Funcion: h(x) = x mod 10
+============================
+
+Insertando elementos:
+  23 -> Indice 3 
+       (sin colision)
+  57 -> Indice 7 
+       (sin colision)
+  87 -> Indice 7 
+       (COLISION #1)
+  15 -> Indice 5 
+       (sin colision)
+  42 -> Indice 2 
+       (sin colision)
+  34 -> Indice 4 
+       (sin colision)
+  20 -> Indice 0 
+       (sin colision)
+\end{verbatim}
+\columnbreak
+\begin{verbatim}
+============================
+TABLA HASH (Tamano: 10)
+============================
+Indice [0]: 20
+Indice [1]: vacio
+Indice [2]: 42
+Indice [3]: 23
+Indice [4]: 34
+Indice [5]: 15
+Indice [6]: vacio
+Indice [7]: 57 -> 87
+Indice [8]: vacio
+Indice [9]: vacio
+============================
+
+Total de colisiones: 1
+Factor de carga: 60%
+\end{verbatim}
+\end{multicols}
+
+\subsubsection{Tabla Hash con Tamaño 7}
+\begin{multicols}{2}
+\begin{verbatim}
+============================
+TABLA HASH - Tamano 7
+Funcion: h(x) = x mod 7
+============================
+
+Insertando elementos:
+  23 -> Indice 2 
+       (sin colision)
+  57 -> Indice 1 
+       (sin colision)
+  87 -> Indice 3 
+       (sin colision)
+  15 -> Indice 1 
+       (COLISION #1)
+  42 -> Indice 0 
+       (sin colision)
+  34 -> Indice 6 
+       (sin colision)
+  20 -> Indice 6 
+       (COLISION #2)
+\end{verbatim}
+\columnbreak
+\begin{verbatim}
+============================
+TABLA HASH (Tamano: 7)
+============================
+Indice [0]: 42
+Indice [1]: 57 -> 15
+Indice [2]: 23
+Indice [3]: 87
+Indice [4]: vacio
+Indice [5]: vacio
+Indice [6]: 34 -> 20
+============================
+
+Total de colisiones: 2
+Factor de carga: 71.4286%
+\end{verbatim}
+\end{multicols}
+
+\end{document}
